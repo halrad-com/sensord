@@ -312,10 +312,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             SetOrientationAtCursor(DMDO_180);
             break;
         case IDH_ROTATE_LEFT:
-            SetOrientationAtCursor(DMDO_270);  // Top moves left
+            SetOrientationAtCursor(DMDO_90);   // Top moves left
             break;
         case IDH_ROTATE_RIGHT:
-            SetOrientationAtCursor(DMDO_90);   // Top moves right
+            SetOrientationAtCursor(DMDO_270);  // Top moves right
             break;
         }
         return 0;
