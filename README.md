@@ -1,6 +1,6 @@
 # sensord
 
-![sensord](sensord.png)
+<img src="sensord.png" width="50%">
 
 Windows sensor utilities.
 
