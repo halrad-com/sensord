@@ -7,19 +7,12 @@ A lightweight Windows utility for managing screen orientation, built for tablets
 ## Features
 
 * **Double-tap to rotate** — Double-click or double-tap the window to rotate the display 90°.
-
 * **Drag to move** — Click and drag anywhere on the window to reposition it.
-
 * **Global hotkeys** — Use Ctrl + Alt + Arrow keys for instant rotation (NVIDIA/Intel style).
-
 * **Multi-monitor support** — Hotkeys rotate whichever monitor the cursor is on.
-
 * **System tray integration** — Runs quietly in the tray for unobtrusive operation.
-
 * **Lock / unlock rotation** — Click the tray icon to toggle between locked and auto-rotate modes.
-
 * **Sensor support** — Automatically rotates based on device orientation when unlocked.
-
 * **Single-file executable** — ~500 KB native Windows binary with all resources embedded.
 
 ## Usage
@@ -35,31 +28,20 @@ ScreenCompass.exe [-m]
 ### Main Window
 
 * **Click + drag** — Move the window.
-
 * **Double-click / tap** — Rotate the screen 90° clockwise.
-
 * **Right-click** — Open the context menu.
-
 * **Close (X)** — Minimize to the system tray.
-
 * **Shift + Close (X)** — Actually close the application.
 
 ### System Tray
 
 * **Left-click** — Toggle rotation lock.
-
   * **Green icon** — Auto-rotation enabled (unlocked).
-
   * **Orange icon** — Rotation locked.
-
 * **Right-click menu**:
-
   * **Show** — Restore the main window.
-
   * **Toggle 90°** — Rotate the screen 90° clockwise.
-
   * **Auto** — Orient to the current sensor reading.
-
   * **Exit** — Close the application.
 
 ### Global Hotkeys
@@ -92,7 +74,6 @@ Copy `ScreenCompass.exe` to the target device. All resources (icons, background 
 ## Requirements
 
 * Windows 10 or later
-
 * Orientation sensor (optional — manual rotation works without one)
 
 ## License
