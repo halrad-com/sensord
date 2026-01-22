@@ -139,7 +139,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
         0,
         CLASS_NAME, WINDOW_TITLE,
         WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX & ~WS_THICKFRAME,
-        CW_USEDEFAULT, CW_USEDEFAULT, 220, 250,
+        CW_USEDEFAULT, CW_USEDEFAULT, 420, 440,
         nullptr, nullptr, hInstance, nullptr
     );
 
@@ -307,10 +307,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             SetOrientation(DMDO_180);
             break;
         case IDH_ROTATE_LEFT:
-            SetOrientation(DMDO_90);
+            SetOrientation(DMDO_270);  // Top moves left
             break;
         case IDH_ROTATE_RIGHT:
-            SetOrientation(DMDO_270);
+            SetOrientation(DMDO_90);   // Top moves right
             break;
         }
         return 0;
@@ -344,8 +344,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_CLOSE:
-        // X button minimizes to tray (use Exit from tray menu to quit)
-        ShowWindow(hwnd, SW_HIDE);
+        // Shift+Click X button to actually close, otherwise minimize to tray
+        if (GetKeyState(VK_SHIFT) & 0x8000)
+        {
+            DestroyWindow(hwnd);
+        }
+        else
+        {
+            ShowWindow(hwnd, SW_HIDE);
+        }
         return 0;
 
     case WM_DESTROY:
@@ -432,61 +439,16 @@ void RotateDisplay(DWORD orientation)
 
 void Toggle90()
 {
-    // Save window rect before rotation
-    RECT rc;
-    GetWindowRect(g_hwnd, &rc);
-    int winCenterX = (rc.left + rc.right) / 2;
-    int winCenterY = (rc.top + rc.bottom) / 2;
-    int winWidth = rc.right - rc.left;
-    int winHeight = rc.bottom - rc.top;
-
-    // Get screen dimensions before rotation
-    int screenW = GetSystemMetrics(SM_CXSCREEN);
-    int screenH = GetSystemMetrics(SM_CYSCREEN);
-
-    // Rotate clockwise: 0 -> 270 -> 180 -> 90 -> 0
+    // Rotate clockwise: 0 -> 90 -> 180 -> 270 -> 0
     switch (g_currentOrientation)
     {
-    case DMDO_DEFAULT: g_currentOrientation = DMDO_270; break;
-    case DMDO_270: g_currentOrientation = DMDO_180; break;
-    case DMDO_180: g_currentOrientation = DMDO_90; break;
-    case DMDO_90: g_currentOrientation = DMDO_DEFAULT; break;
+    case DMDO_DEFAULT: g_currentOrientation = DMDO_90; break;
+    case DMDO_90: g_currentOrientation = DMDO_180; break;
+    case DMDO_180: g_currentOrientation = DMDO_270; break;
+    case DMDO_270: g_currentOrientation = DMDO_DEFAULT; break;
     default: g_currentOrientation = DMDO_DEFAULT; break;
     }
     RotateDisplay(g_currentOrientation);
-
-    // Get new screen dimensions
-    int newScreenW = GetSystemMetrics(SM_CXSCREEN);
-    int newScreenH = GetSystemMetrics(SM_CYSCREEN);
-
-    // Calculate new window position to keep it in roughly the same physical spot
-    int newX, newY;
-    if (screenW != newScreenW) // Orientation changed between landscape/portrait
-    {
-        // Map old center to new coordinates
-        float relX = (float)winCenterX / screenW;
-        float relY = (float)winCenterY / screenH;
-        newX = (int)(relY * newScreenW) - winWidth / 2;
-        newY = (int)((1.0f - relX) * newScreenH) - winHeight / 2;
-    }
-    else
-    {
-        newX = rc.left;
-        newY = rc.top;
-    }
-
-    // Keep window on screen
-    if (newX < 0) newX = 0;
-    if (newY < 0) newY = 0;
-    if (newX + winWidth > newScreenW) newX = newScreenW - winWidth;
-    if (newY + winHeight > newScreenH) newY = newScreenH - winHeight;
-
-    // Move window and cursor
-    SetWindowPos(g_hwnd, nullptr, newX, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-
-    // Put cursor in center of window
-    SetCursorPos(newX + winWidth / 2, newY + winHeight / 2);
-
     PostMessage(g_hwnd, WM_USER + 2, 0, 0);
 }
 
@@ -526,16 +488,17 @@ HICON LoadPngAsIcon(const wchar_t* path, int size)
 
 DWORD SensorOrientationToDisplay(SimpleOrientation orientation)
 {
+    // Sensor reports device orientation; we need opposite rotation for content
     switch (orientation)
     {
     case SimpleOrientation::NotRotated:
         return DMDO_DEFAULT;
     case SimpleOrientation::Rotated90DegreesCounterclockwise:
-        return DMDO_90;
+        return DMDO_270;  // Device rotated CCW -> content rotates CW
     case SimpleOrientation::Rotated180DegreesCounterclockwise:
         return DMDO_180;
     case SimpleOrientation::Rotated270DegreesCounterclockwise:
-        return DMDO_270;
+        return DMDO_90;   // Device rotated CW -> content rotates CCW
     default:
         return g_currentOrientation;
     }
