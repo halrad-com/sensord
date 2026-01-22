@@ -26,7 +26,7 @@ if errorlevel 1 (
     exit /b 1
 )
 echo Compiling main.cpp...
-cl /nologo /EHsc /std:c++20 /O2 /DUNICODE /D_UNICODE main.cpp resource.res /link /OUT:Oriented.exe user32.lib shell32.lib gdi32.lib ole32.lib windowsapp.lib
+cl /nologo /EHsc /std:c++20 /O2 /DUNICODE /D_UNICODE main.cpp resource.res /link /OUT:ScreenCompass.exe user32.lib shell32.lib gdi32.lib ole32.lib windowsapp.lib
 if errorlevel 1 (
     echo CL failed
     exit /b 1
@@ -40,9 +40,9 @@ $buildScript | Out-File -FilePath $tempBat -Encoding ASCII
 
 & cmd /c $tempBat 2>&1
 
-if ($LASTEXITCODE -eq 0 -and (Test-Path "$PSScriptRoot\Oriented.exe")) {
-    $size = (Get-Item "$PSScriptRoot\Oriented.exe").Length
-    Write-Host "`nBuild succeeded: Oriented.exe ($size bytes)"
+if ($LASTEXITCODE -eq 0 -and (Test-Path "$PSScriptRoot\ScreenCompass.exe")) {
+    $size = (Get-Item "$PSScriptRoot\ScreenCompass.exe").Length
+    Write-Host "`nBuild succeeded: ScreenCompass.exe ($size bytes)"
 } else {
     Write-Host "Build failed with exit code $LASTEXITCODE"
 }

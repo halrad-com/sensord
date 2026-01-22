@@ -6,9 +6,9 @@ Windows sensor utilities.
 
 ## Projects
 
-| Project | Description |
-|---------|-------------|
-| [Oriented](Oriented/) | Screen orientation control for tablets and convertibles |
+| Project                                           | Description                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [ScreenCompass](ScreenCompass/) | Halrad Sensord ScreenCompass provides reliable screen‑rotation control on any device, with or without a hardware sensor.  <br/>It’s built for tablets and convertibles, offering smooth auto‑rotation when sensors are available and precise manual rotation when they’re not. ScreenCompass supports touch, mouse, and keyboard input, giving you flexible, predictable orientation control in every workflow. |
 
 ## License
 

@@ -1,8 +1,8 @@
-# Oriented
+# ScreenCompass
 
 A lightweight Windows utility for controlling screen orientation, designed for tablets and convertible devices.
 
-![Oriented App](OrientedApp.png)
+![ScreenCompass App](ScreenCompassApp.png)
 
 ## Features
 
@@ -19,7 +19,7 @@ A lightweight Windows utility for controlling screen orientation, designed for t
 ### Command Line
 
 ```
-Oriented.exe [-m]
+ScreenCompass.exe [-m]
 ```
 
 - `-m` or `/m` or `-minimized` - Start minimized to system tray
@@ -65,7 +65,7 @@ Requires Visual Studio 2022 with C++ workload and Windows SDK.
 
 ## Deployment
 
-Just copy `Oriented.exe` to the target device. All resources (icons, background image, manifest) are embedded in the executable.
+Just copy `ScreenCompass.exe` to the target device. All resources (icons, background image, manifest) are embedded in the executable.
 
 ## Requirements
 

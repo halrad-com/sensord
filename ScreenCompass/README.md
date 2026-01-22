@@ -1,4 +1,4 @@
-# Oriented
+# ScreenCompass
 
 A lightweight Windows utility for controlling screen orientation, designed for tablets and convertible devices.
 
@@ -34,7 +34,7 @@ The C# sample is archived in `Oriented_CSharp.rar` - a minimal proof-of-concept 
 
 ## Quick Start
 
-Download `Oriented.exe` from [CPP/](CPP/) and run it. No installation required.
+Download `ScreenCompass.exe` from [CPP/](CPP/) and run it. No installation required.
 
 See [CPP/README.md](CPP/README.md) for full usage and build instructions.
 

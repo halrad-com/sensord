@@ -29,9 +29,9 @@ BEGIN
             VALUE "CompanyName", "HALRAD"
             VALUE "FileDescription", "Screen Orientation Utility"
             VALUE "FileVersion", "1.0.0.0"
-            VALUE "InternalName", "Oriented"
-            VALUE "OriginalFilename", "Oriented.exe"
-            VALUE "ProductName", "Oriented"
+            VALUE "InternalName", "ScreenCompass"
+            VALUE "OriginalFilename", "ScreenCompass.exe"
+            VALUE "ProductName", "ScreenCompass"
             VALUE "ProductVersion", "1.0.0.0"
         END
     END

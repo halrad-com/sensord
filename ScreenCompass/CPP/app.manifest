@@ -3,7 +3,7 @@
   <assemblyIdentity
     version="1.0.0.0"
     processorArchitecture="*"
-    name="HALRAD.Oriented"
+    name="HALRAD.ScreenCompass"
     type="win32"
   />
   <description>Screen Orientation Utility</description>

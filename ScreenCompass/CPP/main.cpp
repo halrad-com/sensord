@@ -33,8 +33,8 @@ HICON g_appIcon = nullptr;
 Image* g_bgImage = nullptr;
 Image* g_upArrow = nullptr;
 
-const wchar_t* CLASS_NAME = L"OrientedWindowClass";
-const wchar_t* WINDOW_TITLE = L"Oriented";
+const wchar_t* CLASS_NAME = L"ScreenCompassWindowClass";
+const wchar_t* WINDOW_TITLE = L"ScreenCompass";
 
 // Forward declarations
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -365,7 +365,7 @@ void CreateTrayIcon(HWND hwnd)
     g_nid.uCallbackMessage = WM_TRAYICON;
     g_nid.hIcon = g_locked ? g_iconLocked : g_iconUnlocked;
     if (!g_nid.hIcon) g_nid.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
-    wcscpy_s(g_nid.szTip, g_locked ? L"Oriented - Locked" : L"Oriented - Auto");
+    wcscpy_s(g_nid.szTip, g_locked ? L"ScreenCompass - Locked" : L"ScreenCompass - Auto");
     Shell_NotifyIconW(NIM_ADD, &g_nid);
 }
 
@@ -378,7 +378,7 @@ void UpdateTrayIcon()
 {
     g_nid.hIcon = g_locked ? g_iconLocked : g_iconUnlocked;
     if (!g_nid.hIcon) g_nid.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
-    wcscpy_s(g_nid.szTip, g_locked ? L"Oriented - Locked" : L"Oriented - Auto");
+    wcscpy_s(g_nid.szTip, g_locked ? L"ScreenCompass - Locked" : L"ScreenCompass - Auto");
     Shell_NotifyIconW(NIM_MODIFY, &g_nid);
 }
 

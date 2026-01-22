@@ -13,18 +13,18 @@ if not defined VSINSTALL (
 call "%VSINSTALL%\VC\Auxiliary\Build\vcvars64.bat" >nul 2>&1
 
 :: Build
-echo Building Oriented...
+echo Building ScreenCompass...
 rc /nologo resource.rc
 cl /nologo /EHsc /std:c++20 /O2 /DUNICODE /D_UNICODE ^
    /I "%WindowsSdkDir%Include\%WindowsSDKVersion%\cppwinrt" ^
    main.cpp resource.res ^
-   /link /OUT:Oriented.exe ^
+   /link /OUT:ScreenCompass.exe ^
    user32.lib shell32.lib gdi32.lib ole32.lib windowsapp.lib
 
 if %ERRORLEVEL% == 0 (
     echo.
-    echo Build succeeded: Oriented.exe
-    for %%A in (Oriented.exe) do echo Size: %%~zA bytes
+    echo Build succeeded: ScreenCompass.exe
+    for %%A in (ScreenCompass.exe) do echo Size: %%~zA bytes
 ) else (
     echo Build failed
 )
