@@ -2,7 +2,25 @@
 
 A lightweight Windows utility for controlling screen orientation, designed for tablets and convertible devices.
 
-![Oriented App](OrientedApp.png)
+## Implementations
+
+| Version | Size | Status |
+|---------|------|--------|
+| [CPP](CPP/) | ~500KB | **Active** |
+| C# (WinUI 3) | 205MB | Abandoned |
+| C# (WPF) | 24MB | Abandoned |
+
+### Why C++?
+
+The C# implementations were abandoned due to deployment size issues:
+
+**WinUI 3** - Required 205MB for a trivial ~500 line app. The WinUI 3 runtime and dependencies are massive, and self-contained deployment bundles the entire framework.
+
+**WPF** - Better at 24MB with PublishSingleFile, but still ~50x larger than necessary. Framework-dependent deployment reduces size but requires .NET runtime pre-installed on target devices, which isn't guaranteed on tablets.
+
+**C++ (Win32)** - Native executable with no runtime dependencies. Uses WinRT C++ headers for sensor access (built into Windows 10+). Single 500KB file that runs on any Windows 10+ device out of the box. This is the correct tool for the job.
+
+The archived C# attempt is in `Oriented_CSharp.rar` for reference.
 
 ## Features
 
@@ -13,53 +31,12 @@ A lightweight Windows utility for controlling screen orientation, designed for t
 - **Sensor support** - Automatically rotates based on device orientation when unlocked
 - **Single file** - ~500KB native Windows executable with all resources embedded
 
-## Usage
+## Quick Start
 
-### Command Line
+Download `Oriented.exe` from [CPP/](CPP/) and run it. No installation required.
 
-```
-Oriented.exe [-m]
-```
-
-- `-m` or `/m` or `-minimized` - Start minimized to system tray
-
-### Main Window
-- **Click + drag**: Move the window
-- **Double-click/tap**: Rotate screen 90° clockwise
-- **Right-click**: Context menu
-- **Minimize / Close (X)**: Minimize to system tray
-
-### System Tray
-- **Left-click**: Toggle between locked/unlocked rotation
-  - Green icon: Auto-rotation enabled (unlocked)
-  - Orange icon: Rotation locked
-- **Right-click menu**:
-  - **Show**: Restore main window
-  - **Toggle 90°**: Rotate screen 90° clockwise
-  - **Auto**: Orient to current sensor reading
-  - **Exit**: Close application
-
-## Building
-
-Requires Visual Studio 2022 with C++ workload and Windows SDK.
-
-```powershell
-# Convert icons (only needed if modifying source images)
-.\convert-icon.ps1
-
-# Build
-.\build.ps1
-```
-
-## Deployment
-
-Just copy `Oriented.exe` to the target device. All resources (icons, background image, manifest) are embedded in the executable.
-
-## Requirements
-
-- Windows 10 or later
-- Device with orientation sensor (optional - manual rotation still works)
+See [CPP/README.md](CPP/README.md) for full usage and build instructions.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE)
+MIT License - see [CPP/LICENSE](CPP/LICENSE)
