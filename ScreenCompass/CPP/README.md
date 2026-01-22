@@ -1,4 +1,4 @@
-# ScreenCompass - Always the right angle.
+# HALRAD ScreenCompass - Always the right angle.
 
 A lightweight Windows utility for managing screen orientation, built for tablets and convertible devices.
 
@@ -6,19 +6,21 @@ A lightweight Windows utility for managing screen orientation, built for tablets
 
 ## Features
 
-* **Double‑tap to rotate** — Double‑click or double‑tap the window to rotate the display 90°.
+* **Double-tap to rotate** — Double-click or double-tap the window to rotate the display 90°.
 
 * **Drag to move** — Click and drag anywhere on the window to reposition it.
 
-* **Global hotkeys** — Use Ctrl + Alt + Arrow keys for instant rotation (NVIDIA/Intel style).
+* **Global hotkeys** — Use Ctrl + Alt + Arrow keys for instant rotation (NVIDIA/Intel style).
+
+* **Multi-monitor support** — Hotkeys rotate whichever monitor the cursor is on.
 
 * **System tray integration** — Runs quietly in the tray for unobtrusive operation.
 
-* **Lock / unlock rotation** — Click the tray icon to toggle between locked and auto‑rotate modes.
+* **Lock / unlock rotation** — Click the tray icon to toggle between locked and auto-rotate modes.
 
 * **Sensor support** — Automatically rotates based on device orientation when unlocked.
 
-* **Single‑file executable** — ~500 KB native Windows binary with all resources embedded.
+* **Single-file executable** — ~500 KB native Windows binary with all resources embedded.
 
 ## Usage
 
@@ -30,47 +32,48 @@ ScreenCompass.exe [-m]
 
 - `-m` or `/m` or `-minimized` - Start minimized to system tray
 
-### ### Main Window
+### Main Window
 
 * **Click + drag** — Move the window.
 
-* **Double‑click / tap** — Rotate the screen 90° clockwise.
+* **Double-click / tap** — Rotate the screen 90° clockwise.
 
-* **Right‑click** — Open the context menu.
+* **Right-click** — Open the context menu.
 
-* **Minimize / Close (X)** — Minimize to the system tray.
+* **Close (X)** — Minimize to the system tray.
+
+* **Shift + Close (X)** — Actually close the application.
 
 ### System Tray
 
-* **Left‑click** — Toggle rotation lock.
-  
-  * **Green icon** — Auto‑rotation enabled (unlocked).
-  
+* **Left-click** — Toggle rotation lock.
+
+  * **Green icon** — Auto-rotation enabled (unlocked).
+
   * **Orange icon** — Rotation locked.
 
-* **Right‑click menu**:
-  
+* **Right-click menu**:
+
   * **Show** — Restore the main window.
-  
+
   * **Toggle 90°** — Rotate the screen 90° clockwise.
-  
+
   * **Auto** — Orient to the current sensor reading.
-  
+
   * **Exit** — Close the application.
 
 ### Global Hotkeys
 
-NVIDIA/Intel‑style shortcuts work system‑wide:
+NVIDIA/Intel-style shortcuts work system-wide. On multi-monitor setups, the monitor under the cursor is rotated.
 
-| Hotkey         | Action             |
-| -------------- | ------------------ |
-| Ctrl+Alt+Up    | Normal (0°)        |
-| Ctrl+Alt+Down  | Upside‑down (180°) |
-| Ctrl+Alt+Left  | Portrait (90° CCW) |
-| Ctrl+Alt+Right | Portrait (90° CW)  |
+| Hotkey         | Action                    |
+| -------------- | ------------------------- |
+| Ctrl+Alt+Up    | Normal (0°)               |
+| Ctrl+Alt+Down  | Upside-down (180°)        |
+| Ctrl+Alt+Left  | Portrait - top at left    |
+| Ctrl+Alt+Right | Portrait - top at right   |
 
-Building
---------
+## Building
 
 Requires **Visual Studio 2022** with the C++ workload and Windows SDK.
 
@@ -84,10 +87,9 @@ Requires **Visual Studio 2022** with the C++ workload and Windows SDK.
 
 ## Deployment
 
-Copy `ScreenCompass.exe` to the target device.All resources (icons, background image, manifest) are embedded in the executable.
-Requirements
+Copy `ScreenCompass.exe` to the target device. All resources (icons, background image, manifest) are embedded in the executable.
 
-------------
+## Requirements
 
 * Windows 10 or later
 
