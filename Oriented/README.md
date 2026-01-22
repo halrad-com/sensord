@@ -20,7 +20,7 @@ The C# implementations were abandoned due to deployment size issues:
 
 **C++ (Win32)** - Native executable with no runtime dependencies. Uses WinRT C++ headers for sensor access (built into Windows 10+). Single 500KB file that runs on any Windows 10+ device out of the box. This is the correct tool for the job.
 
-The archived C# attempt is in `Oriented_CSharp.rar` for reference.
+The C# sample is archived in `Oriented_CSharp.rar` - a minimal proof-of-concept that was quickly abandoned once the absurd deployment sizes became apparent.
 
 ## Features
 
