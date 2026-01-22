@@ -43,7 +43,9 @@ void RemoveTrayIcon();
 void UpdateTrayIcon();
 void ShowTrayMenu(HWND hwnd);
 void RotateDisplay(DWORD orientation);
+void RotateDisplayByName(const wchar_t* deviceName, DWORD orientation);
 void SetOrientation(DWORD orientation);
+void SetOrientationAtCursor(DWORD orientation);
 void Toggle90();
 void AutoOrient();
 void RegisterHotkeys(HWND hwnd);
@@ -52,6 +54,8 @@ HICON LoadPngAsIcon(const wchar_t* path, int size);
 DWORD SensorOrientationToDisplay(SimpleOrientation orientation);
 std::wstring GetExeDir();
 DWORD GetCurrentDisplayOrientation();
+DWORD GetDisplayOrientationByName(const wchar_t* deviceName);
+std::wstring GetMonitorAtCursor();
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow)
 {
@@ -298,19 +302,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_HOTKEY:
+        // Follow mouse - rotate whichever monitor the cursor is on
         switch (wParam)
         {
         case IDH_ROTATE_UP:
-            SetOrientation(DMDO_DEFAULT);
+            SetOrientationAtCursor(DMDO_DEFAULT);
             break;
         case IDH_ROTATE_DOWN:
-            SetOrientation(DMDO_180);
+            SetOrientationAtCursor(DMDO_180);
             break;
         case IDH_ROTATE_LEFT:
-            SetOrientation(DMDO_270);  // Top moves left
+            SetOrientationAtCursor(DMDO_270);  // Top moves left
             break;
         case IDH_ROTATE_RIGHT:
-            SetOrientation(DMDO_90);   // Top moves right
+            SetOrientationAtCursor(DMDO_90);   // Top moves right
             break;
         }
         return 0;
@@ -551,4 +556,73 @@ void UnregisterHotkeys(HWND hwnd)
     UnregisterHotKey(hwnd, IDH_ROTATE_DOWN);
     UnregisterHotKey(hwnd, IDH_ROTATE_LEFT);
     UnregisterHotKey(hwnd, IDH_ROTATE_RIGHT);
+}
+
+// Multi-monitor support: Get the device name of the monitor under the cursor
+std::wstring GetMonitorAtCursor()
+{
+    POINT pt;
+    GetCursorPos(&pt);
+
+    HMONITOR hMon = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
+    if (!hMon) return L"";
+
+    MONITORINFOEXW mi = {};
+    mi.cbSize = sizeof(mi);
+    if (GetMonitorInfoW(hMon, &mi))
+    {
+        return mi.szDevice;
+    }
+    return L"";
+}
+
+// Get orientation of a specific monitor by device name
+DWORD GetDisplayOrientationByName(const wchar_t* deviceName)
+{
+    DEVMODEW dm = {};
+    dm.dmSize = sizeof(dm);
+    if (EnumDisplaySettingsW(deviceName, ENUM_CURRENT_SETTINGS, &dm))
+    {
+        return dm.dmDisplayOrientation;
+    }
+    return DMDO_DEFAULT;
+}
+
+// Rotate a specific monitor by device name
+void RotateDisplayByName(const wchar_t* deviceName, DWORD orientation)
+{
+    DEVMODEW dm = {};
+    dm.dmSize = sizeof(dm);
+
+    if (!EnumDisplaySettingsW(deviceName, ENUM_CURRENT_SETTINGS, &dm))
+        return;
+
+    bool wasPortrait = (dm.dmDisplayOrientation == DMDO_90 || dm.dmDisplayOrientation == DMDO_270);
+    bool willBePortrait = (orientation == DMDO_90 || orientation == DMDO_270);
+
+    if (wasPortrait != willBePortrait)
+    {
+        DWORD temp = dm.dmPelsWidth;
+        dm.dmPelsWidth = dm.dmPelsHeight;
+        dm.dmPelsHeight = temp;
+    }
+
+    dm.dmDisplayOrientation = orientation;
+    dm.dmFields = DM_DISPLAYORIENTATION | DM_PELSWIDTH | DM_PELSHEIGHT;
+
+    ChangeDisplaySettingsExW(deviceName, &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
+}
+
+// Set orientation for the monitor under the cursor (follow-mouse)
+void SetOrientationAtCursor(DWORD orientation)
+{
+    std::wstring deviceName = GetMonitorAtCursor();
+    if (deviceName.empty()) return;
+
+    DWORD currentOrientation = GetDisplayOrientationByName(deviceName.c_str());
+    if (orientation != currentOrientation)
+    {
+        RotateDisplayByName(deviceName.c_str(), orientation);
+        PostMessage(g_hwnd, WM_USER + 2, 0, 0);
+    }
 }
