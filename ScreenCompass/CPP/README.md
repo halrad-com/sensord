@@ -2,7 +2,7 @@
 
 A lightweight Windows utility for controlling screen orientation, designed for tablets and convertible devices.
 
-![ScreenCompass App](ScreenCompassApp.png)
+![ScreenCompass App](Halrad-sensord-ScreenCompass.png)
 
 ## Features
 
@@ -25,12 +25,14 @@ ScreenCompass.exe [-m]
 - `-m` or `/m` or `-minimized` - Start minimized to system tray
 
 ### Main Window
+
 - **Click + drag**: Move the window
 - **Double-click/tap**: Rotate screen 90° clockwise
 - **Right-click**: Context menu
 - **Minimize / Close (X)**: Minimize to system tray
 
 ### System Tray
+
 - **Left-click**: Toggle between locked/unlocked rotation
   - Green icon: Auto-rotation enabled (unlocked)
   - Orange icon: Rotation locked
@@ -44,12 +46,12 @@ ScreenCompass.exe [-m]
 
 NVIDIA/Intel-style keyboard shortcuts work system-wide:
 
-| Hotkey | Action |
-|--------|--------|
-| Ctrl+Alt+Up | Normal (0°) |
-| Ctrl+Alt+Down | Upside down (180°) |
-| Ctrl+Alt+Left | Portrait (90° CCW) |
-| Ctrl+Alt+Right | Portrait (90° CW) |
+| Hotkey         | Action             |
+| -------------- | ------------------ |
+| Ctrl+Alt+Up    | Normal (0°)        |
+| Ctrl+Alt+Down  | Upside down (180°) |
+| Ctrl+Alt+Left  | Portrait (90° CCW) |
+| Ctrl+Alt+Right | Portrait (90° CW)  |
 
 ## Building
 
