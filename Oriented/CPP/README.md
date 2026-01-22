@@ -8,6 +8,7 @@ A lightweight Windows utility for controlling screen orientation, designed for t
 
 - **Double-tap to rotate** - Double-click or double-tap the window to rotate the screen 90°
 - **Drag to move** - Click and drag anywhere on the window to reposition it
+- **Global hotkeys** - Ctrl+Alt+Arrow keys for instant rotation (NVIDIA/Intel style)
 - **System tray integration** - Runs in system tray for unobtrusive operation
 - **Lock/unlock rotation** - Click the tray icon to toggle between locked and auto-rotate modes
 - **Sensor support** - Automatically rotates based on device orientation when unlocked
@@ -38,6 +39,17 @@ Oriented.exe [-m]
   - **Toggle 90°**: Rotate screen 90° clockwise
   - **Auto**: Orient to current sensor reading
   - **Exit**: Close application
+
+### Global Hotkeys
+
+NVIDIA/Intel-style keyboard shortcuts work system-wide:
+
+| Hotkey | Action |
+|--------|--------|
+| Ctrl+Alt+Up | Normal (0°) |
+| Ctrl+Alt+Down | Upside down (180°) |
+| Ctrl+Alt+Left | Portrait (90° CCW) |
+| Ctrl+Alt+Right | Portrait (90° CW) |
 
 ## Building
 

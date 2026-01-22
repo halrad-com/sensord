@@ -43,8 +43,11 @@ void RemoveTrayIcon();
 void UpdateTrayIcon();
 void ShowTrayMenu(HWND hwnd);
 void RotateDisplay(DWORD orientation);
+void SetOrientation(DWORD orientation);
 void Toggle90();
 void AutoOrient();
+void RegisterHotkeys(HWND hwnd);
+void UnregisterHotkeys(HWND hwnd);
 HICON LoadPngAsIcon(const wchar_t* path, int size);
 DWORD SensorOrientationToDisplay(SimpleOrientation orientation);
 std::wstring GetExeDir();
@@ -170,6 +173,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
     }
 
     CreateTrayIcon(g_hwnd);
+    RegisterHotkeys(g_hwnd);
 
     // Show window on startup (unless -m flag)
     if (!startMinimized)
@@ -184,6 +188,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
         DispatchMessage(&msg);
     }
 
+    UnregisterHotkeys(g_hwnd);
     RemoveTrayIcon();
 
     // Cleanup
@@ -289,6 +294,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         else if (LOWORD(lParam) == WM_RBUTTONUP)
         {
             ShowTrayMenu(hwnd);
+        }
+        return 0;
+
+    case WM_HOTKEY:
+        switch (wParam)
+        {
+        case IDH_ROTATE_UP:
+            SetOrientation(DMDO_DEFAULT);
+            break;
+        case IDH_ROTATE_DOWN:
+            SetOrientation(DMDO_180);
+            break;
+        case IDH_ROTATE_LEFT:
+            SetOrientation(DMDO_90);
+            break;
+        case IDH_ROTATE_RIGHT:
+            SetOrientation(DMDO_270);
+            break;
         }
         return 0;
 
@@ -538,4 +561,31 @@ DWORD GetCurrentDisplayOrientation()
         return dm.dmDisplayOrientation;
     }
     return DMDO_DEFAULT;
+}
+
+void SetOrientation(DWORD orientation)
+{
+    if (orientation != g_currentOrientation)
+    {
+        g_currentOrientation = orientation;
+        RotateDisplay(orientation);
+        PostMessage(g_hwnd, WM_USER + 2, 0, 0);
+    }
+}
+
+void RegisterHotkeys(HWND hwnd)
+{
+    // Ctrl+Alt+Arrow keys (NVIDIA/Intel style)
+    RegisterHotKey(hwnd, IDH_ROTATE_UP, MOD_CONTROL | MOD_ALT, VK_UP);
+    RegisterHotKey(hwnd, IDH_ROTATE_DOWN, MOD_CONTROL | MOD_ALT, VK_DOWN);
+    RegisterHotKey(hwnd, IDH_ROTATE_LEFT, MOD_CONTROL | MOD_ALT, VK_LEFT);
+    RegisterHotKey(hwnd, IDH_ROTATE_RIGHT, MOD_CONTROL | MOD_ALT, VK_RIGHT);
+}
+
+void UnregisterHotkeys(HWND hwnd)
+{
+    UnregisterHotKey(hwnd, IDH_ROTATE_UP);
+    UnregisterHotKey(hwnd, IDH_ROTATE_DOWN);
+    UnregisterHotKey(hwnd, IDH_ROTATE_LEFT);
+    UnregisterHotKey(hwnd, IDH_ROTATE_RIGHT);
 }

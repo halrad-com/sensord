@@ -26,6 +26,7 @@ The C# sample is archived in `Oriented_CSharp.rar` - a minimal proof-of-concept 
 
 - **Double-tap to rotate** - Double-click or double-tap the window to rotate the screen 90°
 - **Drag to move** - Click and drag anywhere on the window to reposition it
+- **Global hotkeys** - Ctrl+Alt+Arrow keys for instant rotation (NVIDIA/Intel style)
 - **System tray integration** - Runs in system tray for unobtrusive operation
 - **Lock/unlock rotation** - Click the tray icon to toggle between locked and auto-rotate modes
 - **Sensor support** - Automatically rotates based on device orientation when unlocked
