@@ -34,7 +34,7 @@ Image* g_bgImage = nullptr;
 Image* g_upArrow = nullptr;
 
 const wchar_t* CLASS_NAME = L"ScreenCompassWindowClass";
-const wchar_t* WINDOW_TITLE = L"ScreenCompass";
+const wchar_t* WINDOW_TITLE = L"HALRAD ScreenCompass - Always the right angle.";
 
 // Forward declarations
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -377,7 +377,7 @@ void CreateTrayIcon(HWND hwnd)
     g_nid.uCallbackMessage = WM_TRAYICON;
     g_nid.hIcon = g_locked ? g_iconLocked : g_iconUnlocked;
     if (!g_nid.hIcon) g_nid.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
-    wcscpy_s(g_nid.szTip, g_locked ? L"ScreenCompass - Locked" : L"ScreenCompass - Auto");
+    wcscpy_s(g_nid.szTip, g_locked ? L"HALRAD ScreenCompass - Locked" : L"HALRAD ScreenCompass - Auto");
     Shell_NotifyIconW(NIM_ADD, &g_nid);
 }
 
@@ -390,7 +390,7 @@ void UpdateTrayIcon()
 {
     g_nid.hIcon = g_locked ? g_iconLocked : g_iconUnlocked;
     if (!g_nid.hIcon) g_nid.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
-    wcscpy_s(g_nid.szTip, g_locked ? L"ScreenCompass - Locked" : L"ScreenCompass - Auto");
+    wcscpy_s(g_nid.szTip, g_locked ? L"HALRAD ScreenCompass - Locked" : L"HALRAD ScreenCompass - Auto");
     Shell_NotifyIconW(NIM_MODIFY, &g_nid);
 }
 
@@ -616,6 +616,10 @@ void RotateDisplayByName(const wchar_t* deviceName, DWORD orientation)
 // Set orientation for the monitor under the cursor (follow-mouse)
 void SetOrientationAtCursor(DWORD orientation)
 {
+    // Save cursor position before rotation
+    POINT cursorPos;
+    GetCursorPos(&cursorPos);
+
     std::wstring deviceName = GetMonitorAtCursor();
     if (deviceName.empty()) return;
 
@@ -623,6 +627,10 @@ void SetOrientationAtCursor(DWORD orientation)
     if (orientation != currentOrientation)
     {
         RotateDisplayByName(deviceName.c_str(), orientation);
+
+        // Restore cursor position after rotation
+        SetCursorPos(cursorPos.x, cursorPos.y);
+
         PostMessage(g_hwnd, WM_USER + 2, 0, 0);
     }
 }
