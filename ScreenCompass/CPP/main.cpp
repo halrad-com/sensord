@@ -36,6 +36,9 @@ Image* g_upArrow = nullptr;
 const wchar_t* CLASS_NAME = L"ScreenCompassWindowClass";
 const wchar_t* WINDOW_TITLE = L"HALRAD ScreenCompass - Always the right angle.";
 
+// Cursor restore after rotation (Windows resets cursor async after display change)
+POINT g_cursorRestore = {0, 0};
+
 // Forward declarations
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 void CreateTrayIcon(HWND hwnd);
@@ -266,6 +269,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     case WM_USER + 2: // Update UI
         InvalidateRect(hwnd, nullptr, FALSE);
+        return 0;
+
+    case WM_USER + 3: // Restore cursor position after rotation
+        SetCursorPos(g_cursorRestore.x, g_cursorRestore.y);
         return 0;
 
     case WM_LBUTTONDOWN:
@@ -617,8 +624,7 @@ void RotateDisplayByName(const wchar_t* deviceName, DWORD orientation)
 void SetOrientationAtCursor(DWORD orientation)
 {
     // Save cursor position before rotation
-    POINT cursorPos;
-    GetCursorPos(&cursorPos);
+    GetCursorPos(&g_cursorRestore);
 
     std::wstring deviceName = GetMonitorAtCursor();
     if (deviceName.empty()) return;
@@ -628,9 +634,8 @@ void SetOrientationAtCursor(DWORD orientation)
     {
         RotateDisplayByName(deviceName.c_str(), orientation);
 
-        // Restore cursor position after rotation
-        SetCursorPos(cursorPos.x, cursorPos.y);
-
+        // Restore cursor position after Windows finishes display change
+        PostMessage(g_hwnd, WM_USER + 3, 0, 0);
         PostMessage(g_hwnd, WM_USER + 2, 0, 0);
     }
 }
