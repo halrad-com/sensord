@@ -71,6 +71,31 @@ Requires **Visual Studio 2022** with the C++ workload and Windows SDK.
 
 Copy `ScreenCompass.exe` to the target device. All resources (icons, background image, manifest) are embedded in the executable.
 
+## Debugging
+
+ScreenCompass outputs diagnostic messages via `OutputDebugString`. View them with:
+
+- **DebugView** (Sysinternals) - Run DebugView, enable "Capture Win32", then run ScreenCompass
+- **Visual Studio** - Run with debugger attached (F5), messages appear in Output window
+
+Messages are prefixed with `[ScreenCompass]` and tagged by level:
+
+| Level | Meaning |
+|-------|---------|
+| INFO | Key events (startup, shutdown, sensor found, lock/unlock) |
+| WARN | Non-fatal issues (hotkey conflicts, display change failed) |
+| ERROR | Failures (GDI+ init, window creation) |
+| DEBUG | Diagnostic detail (orientation changes) |
+
+Example output:
+```
+[ScreenCompass] INFO: Starting ScreenCompass
+[ScreenCompass] INFO: Orientation sensor found
+[ScreenCompass] WARN: Some hotkeys failed to register (may be claimed by GPU driver)
+[ScreenCompass] INFO: Rotation unlocked (auto)
+[ScreenCompass] DEBUG: Sensor orientation change
+```
+
 ## Requirements
 
 * Windows 10 or later

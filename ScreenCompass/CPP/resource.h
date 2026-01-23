@@ -16,4 +16,5 @@
 #define IDH_ROTATE_LEFT     3
 #define IDH_ROTATE_RIGHT    4
 
-#define WM_TRAYICON     (WM_USER + 1)
+#define WM_TRAYICON         (WM_USER + 1)
+#define WM_SENSOR_ORIENT    (WM_USER + 4)

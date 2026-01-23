@@ -19,10 +19,43 @@ using namespace winrt;
 using namespace Windows::Devices::Sensors;
 using namespace Gdiplus;
 
+// Logging - output visible in DebugView or Visual Studio debugger
+namespace Log
+{
+    void Info(const wchar_t* msg)
+    {
+        wchar_t buf[512];
+        swprintf_s(buf, L"[ScreenCompass] INFO: %s\n", msg);
+        OutputDebugStringW(buf);
+    }
+
+    void Warn(const wchar_t* msg)
+    {
+        wchar_t buf[512];
+        swprintf_s(buf, L"[ScreenCompass] WARN: %s\n", msg);
+        OutputDebugStringW(buf);
+    }
+
+    void Error(const wchar_t* msg)
+    {
+        wchar_t buf[512];
+        swprintf_s(buf, L"[ScreenCompass] ERROR: %s\n", msg);
+        OutputDebugStringW(buf);
+    }
+
+    void Debug(const wchar_t* msg)
+    {
+        wchar_t buf[512];
+        swprintf_s(buf, L"[ScreenCompass] DEBUG: %s\n", msg);
+        OutputDebugStringW(buf);
+    }
+}
+
 // Globals
-HWND g_hwnd = nullptr;
+std::atomic<HWND> g_hwnd{nullptr};
 NOTIFYICONDATAW g_nid = {};
 SimpleOrientationSensor g_sensor = nullptr;
+winrt::event_token g_sensorToken{};
 std::atomic<bool> g_locked{false};
 std::atomic<DWORD> g_currentOrientation{DMDO_DEFAULT};
 ULONG_PTR g_gdiplusToken = 0;
@@ -31,7 +64,9 @@ HICON g_iconLocked = nullptr;
 HICON g_iconUnlocked = nullptr;
 HICON g_appIcon = nullptr;
 Image* g_bgImage = nullptr;
-Image* g_upArrow = nullptr;
+
+// Track which hotkeys registered successfully
+bool g_hotkeyRegistered[4] = {false, false, false, false};
 
 const wchar_t* CLASS_NAME = L"ScreenCompassWindowClass";
 const wchar_t* WINDOW_TITLE = L"HALRAD ScreenCompass - Always the right angle.";
@@ -53,15 +88,14 @@ void Toggle90();
 void AutoOrient();
 void RegisterHotkeys(HWND hwnd);
 void UnregisterHotkeys(HWND hwnd);
-HICON LoadPngAsIcon(const wchar_t* path, int size);
 DWORD SensorOrientationToDisplay(SimpleOrientation orientation);
-std::wstring GetExeDir();
 DWORD GetCurrentDisplayOrientation();
 DWORD GetDisplayOrientationByName(const wchar_t* deviceName);
 std::wstring GetMonitorAtCursor();
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow)
 {
+    Log::Info(L"Starting ScreenCompass");
     winrt::init_apartment();
 
     // Check for -m or /m to start minimized
@@ -80,9 +114,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 
     // Initialize GDI+
     GdiplusStartupInput gdiplusStartupInput;
-    GdiplusStartup(&g_gdiplusToken, &gdiplusStartupInput, nullptr);
-
-    std::wstring exeDir = GetExeDir();
+    if (GdiplusStartup(&g_gdiplusToken, &gdiplusStartupInput, nullptr) != Ok)
+    {
+        Log::Error(L"GDI+ initialization failed");
+        winrt::uninit_apartment();
+        return 1;
+    }
 
     // Load icons from embedded resources
     g_iconLocked = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_LOCKED));
@@ -109,11 +146,22 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
                     {
                         memcpy(pMem, pData, size);
                         GlobalUnlock(hMem);
-                        CreateStreamOnHGlobal(hMem, TRUE, &pStream);
-                        if (pStream)
+                        HRESULT hr = CreateStreamOnHGlobal(hMem, TRUE, &pStream);
+                        if (SUCCEEDED(hr) && pStream)
                         {
                             g_bgImage = Image::FromStream(pStream);
                             pStream->Release();
+                            // Validate image loaded successfully
+                            if (g_bgImage && g_bgImage->GetLastStatus() != Ok)
+                            {
+                                delete g_bgImage;
+                                g_bgImage = nullptr;
+                            }
+                        }
+                        else
+                        {
+                            // Stream creation failed - we still own hMem
+                            GlobalFree(hMem);
                         }
                     }
                     else
@@ -139,7 +187,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
     wc.lpszClassName = CLASS_NAME;
     wc.hIcon = g_appIcon;
     wc.hIconSm = g_appIcon;
-    RegisterClassExW(&wc);
+    if (!RegisterClassExW(&wc))
+    {
+        Log::Error(L"Failed to register window class");
+        GdiplusShutdown(g_gdiplusToken);
+        winrt::uninit_apartment();
+        return 1;
+    }
 
     // Create window
     g_hwnd = CreateWindowExW(
@@ -150,7 +204,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
         nullptr, nullptr, hInstance, nullptr
     );
 
-    if (!g_hwnd) return 1;
+    if (!g_hwnd)
+    {
+        Log::Error(L"Failed to create window");
+        GdiplusShutdown(g_gdiplusToken);
+        winrt::uninit_apartment();
+        return 1;
+    }
 
     // Set window icon
     if (g_appIcon)
@@ -163,20 +223,26 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
     g_sensor = SimpleOrientationSensor::GetDefault();
     if (g_sensor)
     {
-        g_sensor.OrientationChanged([](SimpleOrientationSensor const&,
+        Log::Info(L"Orientation sensor found");
+        g_sensorToken = g_sensor.OrientationChanged([](SimpleOrientationSensor const&,
             SimpleOrientationSensorOrientationChangedEventArgs const& args)
         {
             if (!g_locked)
             {
                 DWORD newOrientation = SensorOrientationToDisplay(args.Orientation());
-                if (newOrientation != g_currentOrientation)
+                HWND hwnd = g_hwnd.load();
+                // Verify window is still valid before posting
+                if (hwnd && IsWindow(hwnd) && newOrientation != g_currentOrientation.load())
                 {
-                    g_currentOrientation = newOrientation;
-                    RotateDisplay(g_currentOrientation);
-                    PostMessage(g_hwnd, WM_USER + 2, 0, 0);
+                    // Post to UI thread - don't call RotateDisplay from sensor thread
+                    PostMessage(hwnd, WM_SENSOR_ORIENT, static_cast<WPARAM>(newOrientation), 0);
                 }
             }
         });
+    }
+    else
+    {
+        Log::Info(L"No orientation sensor found - manual rotation only");
     }
 
     CreateTrayIcon(g_hwnd);
@@ -195,14 +261,26 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
         DispatchMessage(&msg);
     }
 
+    Log::Info(L"Shutting down");
     UnregisterHotkeys(g_hwnd);
     RemoveTrayIcon();
 
+    // Release WinRT sensor before uninit_apartment
+    if (g_sensor)
+    {
+        if (g_sensorToken)
+        {
+            g_sensor.OrientationChanged(g_sensorToken);
+            g_sensorToken = {};
+        }
+        g_sensor = nullptr;
+    }
+
     // Cleanup
     delete g_bgImage;
-    delete g_upArrow;
     // Icons loaded via LoadIcon() are shared system resources - do not call DestroyIcon
     GdiplusShutdown(g_gdiplusToken);
+    winrt::uninit_apartment();
 
     return (int)msg.wParam;
 }
@@ -221,7 +299,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         // Create buffer for double-buffering
         HDC memDC = CreateCompatibleDC(hdc);
+        if (!memDC)
+        {
+            EndPaint(hwnd, &ps);
+            return 0;
+        }
+
         HBITMAP memBitmap = CreateCompatibleBitmap(hdc, rc.right, rc.bottom);
+        if (!memBitmap)
+        {
+            DeleteDC(memDC);
+            EndPaint(hwnd, &ps);
+            return 0;
+        }
+
         HBITMAP oldBitmap = (HBITMAP)SelectObject(memDC, memBitmap);
 
         // Fill background
@@ -271,6 +362,26 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         InvalidateRect(hwnd, nullptr, FALSE);
         return 0;
 
+    case WM_SENSOR_ORIENT: // Sensor orientation change (posted from sensor thread)
+    {
+        DWORD newOrientation = static_cast<DWORD>(wParam);
+        // Validate orientation is one of the four valid values
+        if (newOrientation != DMDO_DEFAULT && newOrientation != DMDO_90 &&
+            newOrientation != DMDO_180 && newOrientation != DMDO_270)
+        {
+            Log::Warn(L"Invalid orientation value from sensor");
+            return 0;
+        }
+        if (newOrientation != g_currentOrientation.load())
+        {
+            Log::Debug(L"Sensor orientation change");
+            g_currentOrientation = newOrientation;
+            RotateDisplay(newOrientation);
+            InvalidateRect(hwnd, nullptr, FALSE);
+        }
+        return 0;
+    }
+
     case WM_USER + 3: // Restore cursor position after rotation
         SetCursorPos(g_cursorRestore.x, g_cursorRestore.y);
         return 0;
@@ -296,6 +407,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
             // Toggle lock on click
             g_locked = !g_locked;
+            Log::Info(g_locked ? L"Rotation locked" : L"Rotation unlocked (auto)");
             UpdateTrayIcon();
             if (!g_locked && g_sensor)
             {
@@ -368,6 +480,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_DESTROY:
+        // Unregister sensor before window destruction to prevent callback posting to dead hwnd
+        if (g_sensor && g_sensorToken)
+        {
+            g_sensor.OrientationChanged(g_sensorToken);
+            g_sensorToken = {};
+        }
+        g_hwnd = nullptr;  // Signal to any pending callbacks
         PostQuitMessage(0);
         return 0;
     }
@@ -431,7 +550,10 @@ void RotateDisplay(DWORD orientation)
     dm.dmSize = sizeof(dm);
 
     if (!EnumDisplaySettingsW(nullptr, ENUM_CURRENT_SETTINGS, &dm))
+    {
+        Log::Error(L"Failed to get current display settings");
         return;
+    }
 
     bool wasPortrait = (dm.dmDisplayOrientation == DMDO_90 || dm.dmDisplayOrientation == DMDO_270);
     bool willBePortrait = (orientation == DMDO_90 || orientation == DMDO_270);
@@ -446,7 +568,11 @@ void RotateDisplay(DWORD orientation)
     dm.dmDisplayOrientation = orientation;
     dm.dmFields = DM_DISPLAYORIENTATION | DM_PELSWIDTH | DM_PELSHEIGHT;
 
-    ChangeDisplaySettingsExW(nullptr, &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
+    LONG result = ChangeDisplaySettingsExW(nullptr, &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
+    if (result != DISP_CHANGE_SUCCESSFUL)
+    {
+        Log::Warn(L"ChangeDisplaySettings failed");
+    }
 }
 
 void Toggle90()
@@ -475,29 +601,6 @@ void AutoOrient()
     }
 }
 
-HICON LoadPngAsIcon(const wchar_t* path, int size)
-{
-    Bitmap* bitmap = Bitmap::FromFile(path);
-    if (!bitmap || bitmap->GetLastStatus() != Ok)
-    {
-        delete bitmap;
-        return nullptr;
-    }
-
-    // Resize if needed
-    Bitmap* resized = new Bitmap(size, size, PixelFormat32bppARGB);
-    Graphics g(resized);
-    g.SetInterpolationMode(InterpolationModeHighQualityBicubic);
-    g.DrawImage(bitmap, 0, 0, size, size);
-
-    HICON hIcon = nullptr;
-    resized->GetHICON(&hIcon);
-
-    delete resized;
-    delete bitmap;
-    return hIcon;
-}
-
 DWORD SensorOrientationToDisplay(SimpleOrientation orientation)
 {
     // Sensor reports device orientation; we need opposite rotation for content
@@ -514,17 +617,6 @@ DWORD SensorOrientationToDisplay(SimpleOrientation orientation)
     default:
         return g_currentOrientation;
     }
-}
-
-std::wstring GetExeDir()
-{
-    wchar_t path[MAX_PATH];
-    GetModuleFileNameW(nullptr, path, MAX_PATH);
-    std::wstring dir(path);
-    size_t pos = dir.find_last_of(L"\\/");
-    if (pos != std::wstring::npos)
-        dir = dir.substr(0, pos + 1);
-    return dir;
 }
 
 DWORD GetCurrentDisplayOrientation()
@@ -551,18 +643,35 @@ void SetOrientation(DWORD orientation)
 void RegisterHotkeys(HWND hwnd)
 {
     // Ctrl+Alt+Arrow keys (NVIDIA/Intel style)
-    RegisterHotKey(hwnd, IDH_ROTATE_UP, MOD_CONTROL | MOD_ALT, VK_UP);
-    RegisterHotKey(hwnd, IDH_ROTATE_DOWN, MOD_CONTROL | MOD_ALT, VK_DOWN);
-    RegisterHotKey(hwnd, IDH_ROTATE_LEFT, MOD_CONTROL | MOD_ALT, VK_LEFT);
-    RegisterHotKey(hwnd, IDH_ROTATE_RIGHT, MOD_CONTROL | MOD_ALT, VK_RIGHT);
+    // These may fail if another app (GPU driver) has them registered
+    g_hotkeyRegistered[0] = RegisterHotKey(hwnd, IDH_ROTATE_UP, MOD_CONTROL | MOD_ALT, VK_UP) != 0;
+    g_hotkeyRegistered[1] = RegisterHotKey(hwnd, IDH_ROTATE_DOWN, MOD_CONTROL | MOD_ALT, VK_DOWN) != 0;
+    g_hotkeyRegistered[2] = RegisterHotKey(hwnd, IDH_ROTATE_LEFT, MOD_CONTROL | MOD_ALT, VK_LEFT) != 0;
+    g_hotkeyRegistered[3] = RegisterHotKey(hwnd, IDH_ROTATE_RIGHT, MOD_CONTROL | MOD_ALT, VK_RIGHT) != 0;
+
+    int registered = (g_hotkeyRegistered[0] ? 1 : 0) + (g_hotkeyRegistered[1] ? 1 : 0) +
+                     (g_hotkeyRegistered[2] ? 1 : 0) + (g_hotkeyRegistered[3] ? 1 : 0);
+    if (registered == 4)
+    {
+        Log::Info(L"All hotkeys registered (Ctrl+Alt+Arrow)");
+    }
+    else if (registered > 0)
+    {
+        Log::Warn(L"Some hotkeys failed to register (may be claimed by GPU driver)");
+    }
+    else
+    {
+        Log::Warn(L"No hotkeys registered - all claimed by another application");
+    }
 }
 
 void UnregisterHotkeys(HWND hwnd)
 {
-    UnregisterHotKey(hwnd, IDH_ROTATE_UP);
-    UnregisterHotKey(hwnd, IDH_ROTATE_DOWN);
-    UnregisterHotKey(hwnd, IDH_ROTATE_LEFT);
-    UnregisterHotKey(hwnd, IDH_ROTATE_RIGHT);
+    // Only unregister hotkeys that were successfully registered
+    if (g_hotkeyRegistered[0]) UnregisterHotKey(hwnd, IDH_ROTATE_UP);
+    if (g_hotkeyRegistered[1]) UnregisterHotKey(hwnd, IDH_ROTATE_DOWN);
+    if (g_hotkeyRegistered[2]) UnregisterHotKey(hwnd, IDH_ROTATE_LEFT);
+    if (g_hotkeyRegistered[3]) UnregisterHotKey(hwnd, IDH_ROTATE_RIGHT);
 }
 
 // Multi-monitor support: Get the device name of the monitor under the cursor
@@ -602,7 +711,10 @@ void RotateDisplayByName(const wchar_t* deviceName, DWORD orientation)
     dm.dmSize = sizeof(dm);
 
     if (!EnumDisplaySettingsW(deviceName, ENUM_CURRENT_SETTINGS, &dm))
+    {
+        Log::Error(L"Failed to get display settings for monitor");
         return;
+    }
 
     bool wasPortrait = (dm.dmDisplayOrientation == DMDO_90 || dm.dmDisplayOrientation == DMDO_270);
     bool willBePortrait = (orientation == DMDO_90 || orientation == DMDO_270);
@@ -617,7 +729,11 @@ void RotateDisplayByName(const wchar_t* deviceName, DWORD orientation)
     dm.dmDisplayOrientation = orientation;
     dm.dmFields = DM_DISPLAYORIENTATION | DM_PELSWIDTH | DM_PELSHEIGHT;
 
-    ChangeDisplaySettingsExW(deviceName, &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
+    LONG result = ChangeDisplaySettingsExW(deviceName, &dm, nullptr, CDS_UPDATEREGISTRY, nullptr);
+    if (result != DISP_CHANGE_SUCCESSFUL)
+    {
+        Log::Warn(L"ChangeDisplaySettings failed for monitor");
+    }
 }
 
 // Set orientation for the monitor under the cursor (follow-mouse)
